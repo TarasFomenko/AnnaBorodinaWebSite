@@ -2014,7 +2014,7 @@ body.form-submitting {
 
 .soft-photo.photo-real {
   min-height: 0;
-  aspect-ratio: 11 / 16;
+  aspect-ratio: 3 / 5;
   padding: 0;
   background: var(--paper);
   border: 1px solid rgba(255, 253, 249, 0.86);

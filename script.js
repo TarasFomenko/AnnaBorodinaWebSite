@@ -132,36 +132,45 @@ window.addEventListener("resize", () => {
 const contactMessages = {
   ru: {
     subject: (name) => `Запрос на консультацию — ${name}`,
+    checkingEmail: "Проверяем email…",
     sending: "Отправляем",
     success: "Спасибо! Ваш запрос отправлен.",
     error: "Не удалось отправить запрос. Попробуйте ещё раз или напишите на Ann.Nutrivibe@gmail.com.",
     nameRequired: "Введите ваше имя.",
     emailRequired: "Введите email.",
-    emailInvalid: "Введите корректный email.",
+    emailInvalid: "Введите полный email, например name@gmail.com или name@company.com.",
+    emailDomainInvalid: "Этот почтовый домен не существует или не принимает письма.",
+    emailCheckFailed: "Не удалось проверить email. Проверьте соединение и попробуйте ещё раз.",
     messageRequired: "Кратко опишите ваш запрос.",
     copySuccess: "Email скопирован.",
     copyError: "Не удалось скопировать email."
   },
   en: {
     subject: (name) => `Consultation request — ${name}`,
+    checkingEmail: "Checking email…",
     sending: "Sending",
     success: "Thank you! Your request has been sent.",
     error: "The request could not be sent. Please try again or email Ann.Nutrivibe@gmail.com.",
     nameRequired: "Please enter your name.",
     emailRequired: "Please enter your email.",
-    emailInvalid: "Please enter a valid email.",
+    emailInvalid: "Enter a complete email, for example name@gmail.com or name@company.com.",
+    emailDomainInvalid: "This email domain does not exist or cannot receive mail.",
+    emailCheckFailed: "The email could not be checked. Check your connection and try again.",
     messageRequired: "Please briefly describe your concern.",
     copySuccess: "Email copied.",
     copyError: "The email could not be copied."
   },
   uk: {
     subject: (name) => `Запит на консультацію — ${name}`,
+    checkingEmail: "Перевіряємо email…",
     sending: "Надсилаємо",
     success: "Дякую! Ваш запит надіслано.",
     error: "Не вдалося надіслати запит. Спробуйте ще раз або напишіть на Ann.Nutrivibe@gmail.com.",
     nameRequired: "Введіть ваше ім’я.",
     emailRequired: "Введіть email.",
-    emailInvalid: "Введіть коректний email.",
+    emailInvalid: "Введіть повний email, наприклад name@gmail.com або name@company.com.",
+    emailDomainInvalid: "Цей поштовий домен не існує або не приймає листи.",
+    emailCheckFailed: "Не вдалося перевірити email. Перевірте з’єднання та спробуйте ще раз.",
     messageRequired: "Коротко опишіть ваш запит.",
     copySuccess: "Email скопійовано.",
     copyError: "Не вдалося скопіювати email."
@@ -248,6 +257,87 @@ async function hideSubmissionOverlay() {
   }
 }
 
+function isCompleteEmailAddress(value) {
+  if (value.length > 254) {
+    return false;
+  }
+
+  const parts = value.split("@");
+
+  if (parts.length !== 2 || !parts[0] || parts[0].length > 64) {
+    return false;
+  }
+
+  const domain = parts[1];
+  const labels = domain.split(".");
+
+  if (domain.length > 253 || labels.length < 2) {
+    return false;
+  }
+
+  const hasValidLabels = labels.every((label) => (
+    label.length > 0
+    && label.length <= 63
+    && /^[a-z0-9-]+$/i.test(label)
+    && !label.startsWith("-")
+    && !label.endsWith("-")
+  ));
+
+  if (!hasValidLabels) {
+    return false;
+  }
+
+  const topLevelDomain = labels.at(-1);
+  return /^[a-z]{2,63}$/i.test(topLevelDomain)
+    || /^xn--[a-z0-9-]{2,59}$/i.test(topLevelDomain);
+}
+
+async function canEmailDomainReceiveMail(value) {
+  const domain = value.slice(value.lastIndexOf("@") + 1).toLowerCase();
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 4500);
+
+  try {
+    const response = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`,
+      {
+        headers: {
+          Accept: "application/dns-json"
+        },
+        signal: controller.signal
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Email domain check returned ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.Status === 3) {
+      return false;
+    }
+
+    if (result.Status !== 0) {
+      throw new Error(`Email domain check returned DNS status ${result.Status}`);
+    }
+
+    return Array.isArray(result.Answer) && result.Answer.some((record) => (
+      record.type === 15
+      && typeof record.data === "string"
+      && !/^\d+\s+\.$/.test(record.data.trim())
+    ));
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function setFieldError(field, error) {
+  const errorElement = contactForm.querySelector(`[data-field-error="${field.name}"]`);
+  field.setAttribute("aria-invalid", String(Boolean(error)));
+  errorElement.textContent = error;
+}
+
 function getFieldError(field, messages) {
   const value = field.value.trim();
 
@@ -263,7 +353,10 @@ function getFieldError(field, messages) {
     return messages.messageRequired;
   }
 
-  if (field.name === "email" && field.validity.typeMismatch) {
+  if (
+    field.name === "email"
+    && (field.validity.typeMismatch || !isCompleteEmailAddress(value))
+  ) {
     return messages.emailInvalid;
   }
 
@@ -272,10 +365,7 @@ function getFieldError(field, messages) {
 
 function validateField(field, messages) {
   const error = getFieldError(field, messages);
-  const errorElement = contactForm.querySelector(`[data-field-error="${field.name}"]`);
-
-  field.setAttribute("aria-invalid", String(Boolean(error)));
-  errorElement.textContent = error;
+  setFieldError(field, error);
   return !error;
 }
 
@@ -318,10 +408,39 @@ if (contactForm && "fetch" in window) {
       return;
     }
 
+    const submitButton = contactForm.querySelector("[data-submit-button]");
+    const submitLabel = submitButton.querySelector("[data-submit-label]");
+    const status = contactForm.querySelector("[data-form-status]");
+    const emailField = contactForm.querySelector('[name="email"]');
+    const originalSubmitLabel = submitLabel.textContent;
+
+    submitButton.disabled = true;
+    submitLabel.textContent = messages.checkingEmail;
+    contactForm.setAttribute("aria-busy", "true");
+    status.hidden = true;
+    status.classList.remove("is-success", "is-error");
+
+    try {
+      const domainCanReceiveMail = await canEmailDomainReceiveMail(emailField.value.trim());
+
+      if (!domainCanReceiveMail) {
+        setFieldError(emailField, messages.emailDomainInvalid);
+        emailField.focus();
+        return;
+      }
+    } catch (error) {
+      console.error("Email domain check failed", error);
+      setFieldError(emailField, messages.emailCheckFailed);
+      emailField.focus();
+      return;
+    } finally {
+      submitButton.disabled = false;
+      submitLabel.textContent = originalSubmitLabel;
+      contactForm.removeAttribute("aria-busy");
+    }
+
     const formData = new FormData(contactForm);
     const name = String(formData.get("name") || "").trim();
-    const submitButton = contactForm.querySelector("[data-submit-button]");
-    const status = contactForm.querySelector("[data-form-status]");
     const loadingStartedAt = window.performance.now();
     let submissionSucceeded = false;
 
@@ -329,8 +448,6 @@ if (contactForm && "fetch" in window) {
     formData.set("page", window.location.href);
     submitButton.disabled = true;
     contactForm.setAttribute("aria-busy", "true");
-    status.hidden = true;
-    status.classList.remove("is-success", "is-error");
     showSendingOverlay(messages);
 
     try {
