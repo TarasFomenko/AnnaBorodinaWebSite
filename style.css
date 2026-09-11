@@ -2048,6 +2048,26 @@ body.form-submitting {
   font-size: 13px;
 }
 
+@media (min-width: 861px) {
+  .about-grid {
+    align-items: stretch;
+  }
+
+  .about-media {
+    display: block;
+    min-height: 0;
+  }
+
+  .soft-photo.photo-real {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: auto;
+    flex: none;
+    aspect-ratio: auto;
+  }
+}
+
 @media (max-width: 860px) {
   .about-media::before {
     inset: 28px 8px -18px 28px;
@@ -2058,6 +2078,9 @@ body.form-submitting {
   }
 
   .soft-photo.photo-real {
+    position: relative;
+    inset: auto;
+    height: auto;
     aspect-ratio: 4 / 5;
   }
 }
