@@ -26,7 +26,7 @@
 <a href="#about">Обо мне</a>
 <a href="#scope">Запросы</a>
 <a href="#services">Услуги</a>
-<a href="#guides">Гайды</a>
+<a href="#guides" hidden>Гайды</a>
 <a href="#faq">FAQ</a>
 <a href="#contact">Связаться</a>
 <a class="nav-cta" href="#contact">Записаться</a>
@@ -112,7 +112,7 @@
 <li>Обучающие проекты: наставничество у Лилии Воронковой «Школа здоровья», PreventAge, Первая Школа Биохакинга, Naukroom Education</li>
 </ul>
 <div class="iherb-note"><strong>iHerb:</strong> Мой персональный код на iHerb: IOC6781 — даёт 5% скидки при оформлении покупки.</div>
-<div class="signature-row">
+<div class="signature-row" hidden>
 <span class="signature">Anna Borodina</span>
 <span class="line"></span>
 </div>
@@ -324,7 +324,7 @@
 <div class="gallery-source" data-gallery-alt-prefix="Отзыв клиента" data-gallery-counter-label="Отзыв" data-gallery-count="21" data-gallery-extension="jpg" data-gallery-folder="assets/testimonials" data-gallery-group-source="testimonials" data-gallery-prefix="testimonial" data-gallery-title="Отзывы клиентов" hidden></div>
 </div>
 </section>
-<section class="section" id="guides">
+<section class="section" id="guides" hidden>
 <div class="container">
 <div class="section-heading reveal">
 <p class="eyebrow">Гайды</p>
@@ -416,30 +416,43 @@
 <div class="contact-copy reveal">
 <p class="eyebrow">Связаться со мной</p>
 <h2>Запишитесь на консультацию</h2>
-<p>Напишите, с каким запросом хотите прийти. Кнопка формы откроет черновик письма на email.</p>
+<p>Напишите, с каким запросом хотите прийти. После отправки я отвечу на указанный email.</p>
 <div class="contact-links">
-<a href="mailto:Ann.Nutrivibe@gmail.com">Email</a>
+<button class="contact-email-copy" data-copy-email="Ann.Nutrivibe@gmail.com" data-locale="ru" type="button">
+<span>Email: Ann.Nutrivibe@gmail.com</span>
+</button>
+<span class="contact-email-status" data-copy-status hidden role="status" aria-live="polite"></span>
 <a href="https://www.instagram.com/dr.anna.borodina/" rel="noopener" target="_blank">Instagram</a>
 <a href="https://t.me/Anna_NNCP" rel="noopener" target="_blank">Telegram</a>
 </div>
 </div>
-<form class="contact-form reveal reveal-delay-1" id="contactForm" data-locale="ru">
+<form action="https://formspree.io/f/xyeyobeq" class="contact-form reveal reveal-delay-1" id="contactForm" data-locale="ru" method="POST">
+<input name="subject" type="hidden" value="Запрос на консультацию — {{ name }}"/>
+<input name="language" type="hidden" value="RU"/>
+<input aria-hidden="true" autocomplete="off" class="form-honeypot" name="_gotcha" tabindex="-1" type="text"/>
 <label>
             Ваше имя
-            <input name="name" placeholder="Ваше имя" required="" type="text"/>
+            <input aria-describedby="contactNameError" id="contactName" name="name" placeholder="Ваше имя" required="" type="text"/>
+<span class="form-field-error" data-field-error="name" id="contactNameError" role="alert"></span>
 </label>
 <label>
             Email
-            <input name="email" placeholder="name@email.com" required="" type="email"/>
+            <input aria-describedby="contactEmailError" id="contactEmail" name="email" placeholder="name@email.com" required="" type="email"/>
+<span class="form-field-error" data-field-error="email" id="contactEmailError" role="alert"></span>
 </label>
 <label>
             Коротко опишите запрос
-            <textarea name="message" placeholder="Коротко опишите запрос" required=""></textarea>
+            <textarea aria-describedby="contactMessageError" id="contactMessage" maxlength="1000" name="message" placeholder="Коротко опишите запрос" required=""></textarea>
+<span class="form-field-error" data-field-error="message" id="contactMessageError" role="alert"></span>
 </label>
-<button class="button button-primary" type="submit">Отправить запрос</button>
+<p class="form-note">Не отправляйте через форму результаты анализов и конфиденциальные медицинские документы.</p>
+<button class="button button-primary" data-submit-button type="submit">
+<span data-submit-label>Отправить запрос</span>
+</button>
+<p class="form-status" data-form-status hidden role="status" aria-live="polite"></p>
 </form>
 </div>
-<div class="container booking-cta reveal">
+<div class="container booking-cta reveal" hidden>
 <div>
 <h3>Готовы начать работу?</h3>
 <p>Если вы уже выбрали формат консультации, вы можете сразу забронировать удобное время в календаре. После записи вы получите подтверждение на email и ссылку на онлайн-встречу.</p>
@@ -461,6 +474,15 @@
 </div>
 </section>
 </main>
+<div aria-hidden="true" class="submission-overlay" data-submit-overlay hidden tabindex="-1">
+<div class="submission-feedback" role="status" aria-live="assertive">
+<div aria-hidden="true" class="submission-symbol">
+<span class="submission-spinner-circle"></span>
+<span class="submission-success-circle"></span>
+</div>
+<p class="submission-message"><span data-overlay-message></span><span aria-hidden="true" data-overlay-dots></span></p>
+</div>
+</div>
 <footer class="site-footer">
 <div class="container footer-grid">
 <div>

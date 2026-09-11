@@ -26,7 +26,7 @@
 <a href="#about">About</a>
 <a href="#scope">Concerns</a>
 <a href="#services">Services</a>
-<a href="#guides">Guides</a>
+<a href="#guides" hidden>Guides</a>
 <a href="#faq">FAQ</a>
 <a href="#contact">Contact</a>
 <a class="nav-cta" href="#contact">Book</a>
@@ -112,7 +112,7 @@
 <li>Additional training: Lilia Voronkova’s School of Health mentorship, PreventAge, First School of Biohacking, Naukroom Education</li>
 </ul>
 <div class="iherb-note"><strong>iHerb:</strong> My personal iHerb code: IOC6781 — gives 5% off your order.</div>
-<div class="signature-row">
+<div class="signature-row" hidden>
 <span class="signature">Anna Borodina</span>
 <span class="line"></span>
 </div>
@@ -302,7 +302,7 @@
 </article></div>
 </div>
 </section>
-<section class="section" id="guides">
+<section class="section" id="guides" hidden>
 <div class="container">
 <div class="section-heading reveal">
 <p class="eyebrow">Guides</p>
@@ -394,30 +394,43 @@
 <div class="contact-copy reveal">
 <p class="eyebrow">Contact</p>
 <h2>Book a consultation</h2>
-<p>Send a short note about your concern. The form will open an email draft.</p>
+<p>Send a short note about your concern. I will reply to the email you provide.</p>
 <div class="contact-links">
-<a href="mailto:Ann.Nutrivibe@gmail.com">Email</a>
+<button class="contact-email-copy" data-copy-email="Ann.Nutrivibe@gmail.com" data-locale="en" type="button">
+<span>Email: Ann.Nutrivibe@gmail.com</span>
+</button>
+<span class="contact-email-status" data-copy-status hidden role="status" aria-live="polite"></span>
 <a href="https://www.instagram.com/annaborodina.nncp/" rel="noopener" target="_blank">Instagram</a>
 <a href="https://t.me/Anna_NNCP" rel="noopener" target="_blank">Telegram</a>
 </div>
 </div>
-<form class="contact-form reveal reveal-delay-1" id="contactForm" data-locale="en">
+<form action="https://formspree.io/f/xyeyobeq" class="contact-form reveal reveal-delay-1" id="contactForm" data-locale="en" method="POST">
+<input name="subject" type="hidden" value="Consultation request — {{ name }}"/>
+<input name="language" type="hidden" value="EN"/>
+<input aria-hidden="true" autocomplete="off" class="form-honeypot" name="_gotcha" tabindex="-1" type="text"/>
 <label>
             Your name
-            <input name="name" placeholder="Your name" required="" type="text"/>
+            <input aria-describedby="contactNameError" id="contactName" name="name" placeholder="Your name" required="" type="text"/>
+<span class="form-field-error" data-field-error="name" id="contactNameError" role="alert"></span>
 </label>
 <label>
             Email
-            <input name="email" placeholder="name@email.com" required="" type="email"/>
+            <input aria-describedby="contactEmailError" id="contactEmail" name="email" placeholder="name@email.com" required="" type="email"/>
+<span class="form-field-error" data-field-error="email" id="contactEmailError" role="alert"></span>
 </label>
 <label>
             Briefly describe your concern
-            <textarea name="message" placeholder="Briefly describe your concern" required=""></textarea>
+            <textarea aria-describedby="contactMessageError" id="contactMessage" maxlength="1000" name="message" placeholder="Briefly describe your concern" required=""></textarea>
+<span class="form-field-error" data-field-error="message" id="contactMessageError" role="alert"></span>
 </label>
-<button class="button button-primary" type="submit">Send request</button>
+<p class="form-note">Please do not send test results or confidential medical documents through this form.</p>
+<button class="button button-primary" data-submit-button type="submit">
+<span data-submit-label>Send request</span>
+</button>
+<p class="form-status" data-form-status hidden role="status" aria-live="polite"></p>
 </form>
 </div>
-<div class="container booking-cta reveal">
+<div class="container booking-cta reveal" hidden>
 <div>
 <h3>Ready to begin?</h3>
 <p>If you have already chosen a consultation format, you can book a convenient time in the calendar. After booking, you will receive an email confirmation and an online meeting link.</p>
@@ -439,6 +452,15 @@
 </div>
 </section>
 </main>
+<div aria-hidden="true" class="submission-overlay" data-submit-overlay hidden tabindex="-1">
+<div class="submission-feedback" role="status" aria-live="assertive">
+<div aria-hidden="true" class="submission-symbol">
+<span class="submission-spinner-circle"></span>
+<span class="submission-success-circle"></span>
+</div>
+<p class="submission-message"><span data-overlay-message></span><span aria-hidden="true" data-overlay-dots></span></p>
+</div>
+</div>
 <footer class="site-footer">
 <div class="container footer-grid">
 <div>

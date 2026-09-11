@@ -129,38 +129,292 @@ window.addEventListener("resize", () => {
   });
 });
 
-if (contactForm) {
-  contactForm.addEventListener("submit", (event) => {
-    event.preventDefault();
+const contactMessages = {
+  ru: {
+    subject: (name) => `Запрос на консультацию — ${name}`,
+    sending: "Отправляем",
+    success: "Спасибо! Ваш запрос отправлен.",
+    error: "Не удалось отправить запрос. Попробуйте ещё раз или напишите на Ann.Nutrivibe@gmail.com.",
+    nameRequired: "Введите ваше имя.",
+    emailRequired: "Введите email.",
+    emailInvalid: "Введите корректный email.",
+    messageRequired: "Кратко опишите ваш запрос.",
+    copySuccess: "Email скопирован.",
+    copyError: "Не удалось скопировать email."
+  },
+  en: {
+    subject: (name) => `Consultation request — ${name}`,
+    sending: "Sending",
+    success: "Thank you! Your request has been sent.",
+    error: "The request could not be sent. Please try again or email Ann.Nutrivibe@gmail.com.",
+    nameRequired: "Please enter your name.",
+    emailRequired: "Please enter your email.",
+    emailInvalid: "Please enter a valid email.",
+    messageRequired: "Please briefly describe your concern.",
+    copySuccess: "Email copied.",
+    copyError: "The email could not be copied."
+  },
+  uk: {
+    subject: (name) => `Запит на консультацію — ${name}`,
+    sending: "Надсилаємо",
+    success: "Дякую! Ваш запит надіслано.",
+    error: "Не вдалося надіслати запит. Спробуйте ще раз або напишіть на Ann.Nutrivibe@gmail.com.",
+    nameRequired: "Введіть ваше ім’я.",
+    emailRequired: "Введіть email.",
+    emailInvalid: "Введіть коректний email.",
+    messageRequired: "Коротко опишіть ваш запит.",
+    copySuccess: "Email скопійовано.",
+    copyError: "Не вдалося скопіювати email."
+  }
+};
 
-    const formData = new FormData(contactForm);
-    const name = formData.get("name");
-    const email = formData.get("email");
-    const message = formData.get("message");
-    const locale = contactForm.dataset.locale || "ru";
+function getContactMessages(element) {
+  const locale = element?.dataset.locale || contactForm?.dataset.locale || "ru";
+  return contactMessages[locale] || contactMessages.ru;
+}
 
-    const labels = {
-      ru: {
-        subject: `Запрос на консультацию — ${name}`,
-        body: `Имя: ${name}\nEmail: ${email}\n\nЗапрос:\n${message}`
-      },
-      en: {
-        subject: `Consultation request — ${name}`,
-        body: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-      },
-      uk: {
-        subject: `Запит на консультацію — ${name}`,
-        body: `Ім’я: ${name}\nEmail: ${email}\n\nЗапит:\n${message}`
-      }
-    };
+function wait(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
 
-    const current = labels[locale] || labels.ru;
-    const subject = encodeURIComponent(current.subject);
-    const body = encodeURIComponent(current.body);
+const submissionOverlay = document.querySelector("[data-submit-overlay]");
+const overlayMessage = submissionOverlay?.querySelector("[data-overlay-message]");
+const overlayDots = submissionOverlay?.querySelector("[data-overlay-dots]");
+const lockablePageElements = document.querySelectorAll(
+  "body > .site-header, body > main, body > .site-footer, body > .media-modal, body > .guide-modal"
+);
+let overlayDotsTimer = null;
+let previouslyFocusedElement = null;
 
-    window.location.href = `mailto:Ann.Nutrivibe@gmail.com?subject=${subject}&body=${body}`;
+function setPageLocked(isLocked) {
+  document.body.classList.toggle("form-submitting", isLocked);
+  lockablePageElements.forEach((element) => {
+    element.inert = isLocked;
   });
 }
+
+function showSendingOverlay(messages) {
+  if (!submissionOverlay) {
+    return;
+  }
+
+  previouslyFocusedElement = document.activeElement;
+  submissionOverlay.hidden = false;
+  submissionOverlay.setAttribute("aria-hidden", "false");
+  submissionOverlay.classList.remove("is-success");
+  overlayMessage.textContent = messages.sending;
+  overlayDots.textContent = ".";
+  setPageLocked(true);
+
+  window.requestAnimationFrame(() => {
+    submissionOverlay.classList.add("is-visible");
+    submissionOverlay.focus({ preventScroll: true });
+  });
+
+  let dotCount = 1;
+  window.clearInterval(overlayDotsTimer);
+  overlayDotsTimer = window.setInterval(() => {
+    dotCount = (dotCount % 3) + 1;
+    overlayDots.textContent = ".".repeat(dotCount);
+  }, 450);
+}
+
+function showSuccessOverlay(messages) {
+  if (!submissionOverlay) {
+    return;
+  }
+
+  window.clearInterval(overlayDotsTimer);
+  overlayDots.textContent = "";
+  overlayMessage.textContent = messages.success;
+  submissionOverlay.classList.add("is-success");
+}
+
+async function hideSubmissionOverlay() {
+  if (!submissionOverlay) {
+    return;
+  }
+
+  window.clearInterval(overlayDotsTimer);
+  submissionOverlay.classList.remove("is-visible");
+  await wait(280);
+  submissionOverlay.hidden = true;
+  submissionOverlay.setAttribute("aria-hidden", "true");
+  submissionOverlay.classList.remove("is-success");
+  setPageLocked(false);
+
+  if (previouslyFocusedElement instanceof HTMLElement) {
+    previouslyFocusedElement.focus({ preventScroll: true });
+  }
+}
+
+function getFieldError(field, messages) {
+  const value = field.value.trim();
+
+  if (!value) {
+    if (field.name === "name") {
+      return messages.nameRequired;
+    }
+
+    if (field.name === "email") {
+      return messages.emailRequired;
+    }
+
+    return messages.messageRequired;
+  }
+
+  if (field.name === "email" && field.validity.typeMismatch) {
+    return messages.emailInvalid;
+  }
+
+  return "";
+}
+
+function validateField(field, messages) {
+  const error = getFieldError(field, messages);
+  const errorElement = contactForm.querySelector(`[data-field-error="${field.name}"]`);
+
+  field.setAttribute("aria-invalid", String(Boolean(error)));
+  errorElement.textContent = error;
+  return !error;
+}
+
+function clearFieldErrors() {
+  contactForm.querySelectorAll("[required]").forEach((field) => {
+    field.removeAttribute("aria-invalid");
+  });
+
+  contactForm.querySelectorAll("[data-field-error]").forEach((errorElement) => {
+    errorElement.textContent = "";
+  });
+}
+
+if (contactForm && "fetch" in window) {
+  const requiredFields = Array.from(contactForm.querySelectorAll("[required]"));
+  contactForm.noValidate = true;
+
+  requiredFields.forEach((field) => {
+    field.addEventListener("input", () => {
+      if (field.hasAttribute("aria-invalid")) {
+        validateField(field, getContactMessages(contactForm));
+      }
+    });
+  });
+
+  contactForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const messages = getContactMessages(contactForm);
+    let firstInvalidField = null;
+
+    requiredFields.forEach((field) => {
+      if (!validateField(field, messages) && !firstInvalidField) {
+        firstInvalidField = field;
+      }
+    });
+
+    if (firstInvalidField) {
+      firstInvalidField.focus();
+      return;
+    }
+
+    const formData = new FormData(contactForm);
+    const name = String(formData.get("name") || "").trim();
+    const submitButton = contactForm.querySelector("[data-submit-button]");
+    const status = contactForm.querySelector("[data-form-status]");
+    const loadingStartedAt = window.performance.now();
+    let submissionSucceeded = false;
+
+    formData.set("subject", messages.subject(name));
+    formData.set("page", window.location.href);
+    submitButton.disabled = true;
+    contactForm.setAttribute("aria-busy", "true");
+    status.hidden = true;
+    status.classList.remove("is-success", "is-error");
+    showSendingOverlay(messages);
+
+    try {
+      const response = await fetch(contactForm.action, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      await wait(Math.max(0, 3000 - (window.performance.now() - loadingStartedAt)));
+
+      if (!response.ok) {
+        throw new Error(`Formspree returned ${response.status}`);
+      }
+
+      contactForm.reset();
+      clearFieldErrors();
+      showSuccessOverlay(messages);
+      submissionSucceeded = true;
+      await wait(2800);
+    } catch (error) {
+      await wait(Math.max(0, 3000 - (window.performance.now() - loadingStartedAt)));
+      console.error("Contact form submission failed", error);
+      status.textContent = messages.error;
+      status.classList.add("is-error");
+    } finally {
+      await hideSubmissionOverlay();
+      submitButton.disabled = false;
+      contactForm.removeAttribute("aria-busy");
+
+      if (!submissionSucceeded) {
+        status.hidden = false;
+      }
+    }
+  });
+}
+
+async function copyText(value) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const temporaryInput = document.createElement("textarea");
+  temporaryInput.value = value;
+  temporaryInput.setAttribute("readonly", "");
+  temporaryInput.style.position = "fixed";
+  temporaryInput.style.opacity = "0";
+  document.body.appendChild(temporaryInput);
+  temporaryInput.select();
+  const copied = document.execCommand("copy");
+  temporaryInput.remove();
+
+  if (!copied) {
+    throw new Error("Clipboard API is unavailable");
+  }
+}
+
+document.querySelectorAll("[data-copy-email]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const messages = getContactMessages(button);
+    const status = button.parentElement.querySelector("[data-copy-status]");
+
+    try {
+      await copyText(button.dataset.copyEmail);
+      status.textContent = messages.copySuccess;
+      status.classList.remove("is-error");
+      status.classList.add("is-success");
+    } catch (error) {
+      console.error("Email copy failed", error);
+      status.textContent = messages.copyError;
+      status.classList.remove("is-success");
+      status.classList.add("is-error");
+    }
+
+    status.hidden = false;
+    window.setTimeout(() => {
+      status.hidden = true;
+      status.classList.remove("is-success", "is-error");
+    }, 2500);
+  });
+});
 
 const mediaGalleryModal = document.getElementById("mediaGalleryModal");
 const gallerySources = new Map();
