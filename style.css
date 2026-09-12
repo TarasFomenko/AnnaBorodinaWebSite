@@ -43,8 +43,10 @@ body {
   overflow-x: hidden;
 }
 
+html.menu-open,
 body.menu-open {
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 a {
@@ -1662,8 +1664,11 @@ body.form-submitting {
 }
 
 @media (max-width: 860px) {
+  .site-header.scrolled,
   body.menu-open .site-header.scrolled {
-    backdrop-filter: blur(18px);
+    background: rgba(251, 247, 240, 0.97);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .menu-button {
@@ -2018,12 +2023,12 @@ body.form-submitting {
   }
 
   .site-header.scrolled .header-tools .language-switcher {
-    max-width: 0;
-    padding-inline: 0;
-    border-color: transparent;
-    opacity: 0;
-    transform: translateX(8px);
-    pointer-events: none;
+    max-width: 82px;
+    padding-inline: 3px;
+    border-color: var(--line);
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
   }
 }
 
@@ -2101,6 +2106,12 @@ body.form-submitting {
   letter-spacing: 0.015em;
   text-wrap: balance;
   text-shadow: 0 2px 18px rgba(255, 253, 249, 0.72);
+}
+
+.soft-photo.photo-real .photo-caption strong span {
+  display: block;
+  color: inherit;
+  font-size: 1em;
 }
 
 .soft-photo.photo-real .photo-caption span {
@@ -2788,10 +2799,11 @@ body.modal-open {
   margin-top: auto;
   padding-top: 24px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 14px;
+  width: 100%;
 }
 
 .price-line {
@@ -2864,7 +2876,7 @@ body.modal-open {
 
 @media (max-width: 620px) {
   .service-footer {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .price-amount {

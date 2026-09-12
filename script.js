@@ -2,7 +2,6 @@ const header = document.getElementById("siteHeader");
 const menuButton = document.getElementById("menuButton");
 const mainNav = document.getElementById("mainNav");
 const contactForm = document.getElementById("contactForm");
-let menuScrollPosition = 0;
 
 function onScroll() {
   if (document.body.classList.contains("menu-open")) {
@@ -20,14 +19,11 @@ window.addEventListener("scroll", onScroll);
 onScroll();
 
 function openMenu() {
-  menuScrollPosition = window.scrollY;
   mainNav.classList.add("open");
   menuButton.classList.add("active");
   menuButton.setAttribute("aria-expanded", "true");
+  document.documentElement.classList.add("menu-open");
   document.body.classList.add("menu-open");
-  document.body.style.position = "fixed";
-  document.body.style.inset = `-${menuScrollPosition}px 0 auto`;
-  document.body.style.width = "100%";
 }
 
 function closeMenu() {
@@ -38,11 +34,8 @@ function closeMenu() {
   mainNav.classList.remove("open");
   menuButton.classList.remove("active");
   menuButton.setAttribute("aria-expanded", "false");
+  document.documentElement.classList.remove("menu-open");
   document.body.classList.remove("menu-open");
-  document.body.style.position = "";
-  document.body.style.inset = "";
-  document.body.style.width = "";
-  window.scrollTo(0, menuScrollPosition);
   window.requestAnimationFrame(onScroll);
 }
 
