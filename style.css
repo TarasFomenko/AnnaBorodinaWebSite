@@ -2980,7 +2980,7 @@ body.modal-open {
 
 .fullscript-facts p {
   display: grid;
-  grid-template-columns: minmax(105px, auto) 1fr;
+  grid-template-columns: 190px minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   margin: 0;
