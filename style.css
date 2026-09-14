@@ -2658,16 +2658,66 @@ body.modal-open {
 }
 
 .iherb-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   margin-top: 24px;
   padding: 20px;
   border-radius: var(--radius-lg);
   background: rgba(155, 170, 143, 0.12);
   border: 1px solid rgba(155, 170, 143, 0.22);
   color: var(--muted);
+  transition: transform 0.25s var(--ease-lift), border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.iherb-note:hover {
+  transform: translateY(-2px);
+  border-color: rgba(113, 130, 100, 0.38);
+  background: rgba(155, 170, 143, 0.17);
+  box-shadow: 0 14px 28px rgba(63, 48, 36, 0.08);
+}
+
+.iherb-note:focus-visible {
+  outline: 2px solid rgba(113, 130, 100, 0.5);
+  outline-offset: 4px;
 }
 
 .iherb-note strong {
   color: var(--sage-dark);
+}
+
+.iherb-note-copy {
+  line-height: 1.55;
+}
+
+.iherb-code {
+  display: inline-block;
+  margin-inline: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.72);
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.iherb-note-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  color: var(--sage-dark);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.iherb-note-action span {
+  transition: transform 0.25s ease;
+}
+
+.iherb-note:hover .iherb-note-action span {
+  transform: translate(2px, -2px);
 }
 
 @media (max-width: 900px) {
@@ -2678,6 +2728,12 @@ body.modal-open {
 }
 
 @media (max-width: 700px) {
+  .iherb-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
   .guide-actions {
     align-items: flex-start;
     flex-direction: column;
