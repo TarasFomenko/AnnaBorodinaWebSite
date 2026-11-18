@@ -1673,7 +1673,7 @@ body.form-submitting {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1080px) {
   .site-header.scrolled,
   body.menu-open .site-header.scrolled {
     background: rgba(251, 247, 240, 0.97);
@@ -1728,7 +1728,9 @@ body.form-submitting {
     margin-top: 8px;
     padding: 14px 24px;
   }
+}
 
+@media (max-width: 860px) {
   .hero {
     padding-top: 112px;
   }
@@ -1992,6 +1994,7 @@ body.form-submitting {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-shrink: 0;
 }
 
 .footer-languages {
@@ -2000,7 +2003,7 @@ body.form-submitting {
   margin-top: 18px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1080px) {
   .header-tools .language-switcher {
     display: inline-flex;
     max-width: 82px;
@@ -2029,6 +2032,8 @@ body.form-submitting {
   }
 
   .header-tools {
+    position: relative;
+    z-index: 61;
     gap: 8px;
   }
 
@@ -2042,7 +2047,7 @@ body.form-submitting {
   }
 }
 
-@media (min-width: 861px) {
+@media (min-width: 1081px) {
   .nav .language-switcher {
     display: none;
   }
@@ -2196,6 +2201,32 @@ body.form-submitting {
   .brand-text em {
     font-size: 9px;
     letter-spacing: 0.14em;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-header .brand {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .site-header .brand-mark {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .site-header .brand-text {
+    min-width: 0;
+  }
+
+  .site-header .brand-text strong {
+    font-size: 18px;
+  }
+
+  .site-header .brand-text em {
+    display: none;
   }
 }
 
@@ -2866,6 +2897,7 @@ body.modal-open {
   padding-top: 24px;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -2874,9 +2906,29 @@ body.modal-open {
 
 .price-line {
   display: flex;
-  align-items: flex-end;
-  gap: 9px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.price-option {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.price-option-secondary .price-amount {
+  font-size: 28px;
+  color: var(--muted);
+}
+
+.price-separator {
+  color: var(--faint);
+  font-size: 20px;
+  line-height: 1.15;
+  margin-bottom: 3px;
 }
 
 .price-amount {
@@ -2938,6 +2990,8 @@ body.modal-open {
 .service-footer a.service-button {
   color: white;
   font-weight: 850;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 @media (max-width: 620px) {

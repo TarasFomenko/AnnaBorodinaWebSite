@@ -2,6 +2,76 @@ const header = document.getElementById("siteHeader");
 const menuButton = document.getElementById("menuButton");
 const mainNav = document.getElementById("mainNav");
 const contactForm = document.getElementById("contactForm");
+const mobileMenuQuery = window.matchMedia("(max-width: 1080px)");
+let releaseMenuFocus = null;
+
+function createFocusScope(roots, initialFocus, backgroundElements) {
+  const focusableSelector = "a[href], button, input, select, textarea, [tabindex]";
+  const backgroundState = new Map(
+    backgroundElements.map((element) => [element, element.inert])
+  );
+
+  const getFocusableElements = () => roots.flatMap((root) => (
+    Array.from(root.querySelectorAll(focusableSelector)).filter((element) => (
+      element.tabIndex >= 0
+      && !element.disabled
+      && !element.closest("[hidden], [inert]")
+      && element.getClientRects().length > 0
+      && window.getComputedStyle(element).visibility !== "hidden"
+    ))
+  ));
+
+  const keepFocusInside = (event) => {
+    if (!roots.some((root) => root.contains(event.target))) {
+      initialFocus.focus({ preventScroll: true });
+    }
+  };
+
+  const cycleFocus = (event) => {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const elements = getFocusableElements();
+    event.preventDefault();
+
+    if (!elements.length) {
+      initialFocus.focus({ preventScroll: true });
+      return;
+    }
+
+    const currentIndex = elements.indexOf(document.activeElement);
+    const direction = event.shiftKey ? -1 : 1;
+    const nextIndex = currentIndex === -1
+      ? (event.shiftKey ? elements.length - 1 : 0)
+      : (currentIndex + direction + elements.length) % elements.length;
+    elements[nextIndex].focus({ preventScroll: true });
+  };
+
+  initialFocus.focus({ preventScroll: true });
+  backgroundState.forEach((wasInert, element) => {
+    element.inert = true;
+  });
+  document.addEventListener("keydown", cycleFocus);
+  document.addEventListener("focusin", keepFocusInside);
+
+  return () => {
+    document.removeEventListener("keydown", cycleFocus);
+    document.removeEventListener("focusin", keepFocusInside);
+    backgroundState.forEach((wasInert, element) => {
+      element.inert = wasInert;
+    });
+  };
+}
+
+function getPageSiblings(element) {
+  return Array.from(document.body.children).filter((sibling) => (
+    sibling !== element && sibling.tagName !== "SCRIPT"
+  ));
+}
+
+mainNav.inert = mobileMenuQuery.matches;
+menuButton.setAttribute("aria-controls", mainNav.id);
 
 function onScroll() {
   if (document.body.classList.contains("menu-open")) {
@@ -19,14 +89,24 @@ window.addEventListener("scroll", onScroll);
 onScroll();
 
 function openMenu() {
+  if (!mobileMenuQuery.matches || mainNav.classList.contains("open")) {
+    return;
+  }
+
+  mainNav.inert = false;
   mainNav.classList.add("open");
   menuButton.classList.add("active");
   menuButton.setAttribute("aria-expanded", "true");
   document.documentElement.classList.add("menu-open");
   document.body.classList.add("menu-open");
+  releaseMenuFocus = createFocusScope(
+    [mainNav, header.querySelector(".header-tools")],
+    mainNav.querySelector("a:not([hidden])"),
+    [header.querySelector(".brand"), ...getPageSiblings(header)]
+  );
 }
 
-function closeMenu() {
+function closeMenu({ restoreFocus = true } = {}) {
   if (!mainNav.classList.contains("open")) {
     return;
   }
@@ -36,6 +116,14 @@ function closeMenu() {
   menuButton.setAttribute("aria-expanded", "false");
   document.documentElement.classList.remove("menu-open");
   document.body.classList.remove("menu-open");
+  releaseMenuFocus?.();
+  releaseMenuFocus = null;
+  mainNav.inert = mobileMenuQuery.matches;
+
+  if (restoreFocus && mobileMenuQuery.matches) {
+    menuButton.focus({ preventScroll: true });
+  }
+
   window.requestAnimationFrame(onScroll);
 }
 
@@ -48,17 +136,20 @@ menuButton.addEventListener("click", () => {
 });
 
 mainNav.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", closeMenu);
+  link.addEventListener("click", () => closeMenu({ restoreFocus: false }));
 });
 
 window.addEventListener("resize", () => {
-  if (window.innerWidth > 860) {
-    closeMenu();
+  if (!mobileMenuQuery.matches) {
+    closeMenu({ restoreFocus: false });
   }
+
+  mainNav.inert = mobileMenuQuery.matches && !mainNav.classList.contains("open");
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
+  if (event.key === "Escape" && mainNav.classList.contains("open")) {
+    event.preventDefault();
     closeMenu();
   }
 });
@@ -609,6 +700,7 @@ if (mediaGalleryModal && gallerySources.size) {
   let activeIndex = 0;
   let lastActiveGalleryElement = null;
   let galleryCloseTimer = null;
+  let releaseGalleryFocus = null;
 
   const updateGalleryImage = () => {
     if (!activeGallery || !activeGallery.images.length) {
@@ -647,30 +739,41 @@ if (mediaGalleryModal && gallerySources.size) {
 
     if (galleryCloseTimer) {
       window.clearTimeout(galleryCloseTimer);
+      galleryCloseTimer = null;
     }
 
+    releaseGalleryFocus?.();
     updateGalleryImage();
     mediaGalleryModal.hidden = false;
     mediaGalleryModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
+    releaseGalleryFocus = createFocusScope(
+      [mediaGalleryModal], galleryClose, getPageSiblings(mediaGalleryModal)
+    );
 
     window.requestAnimationFrame(() => {
       mediaGalleryModal.classList.add("open");
-      galleryClose.focus();
     });
   };
 
   const closeMediaGallery = () => {
+    if (mediaGalleryModal.hidden || galleryCloseTimer) {
+      return;
+    }
+
     mediaGalleryModal.classList.remove("open");
-    mediaGalleryModal.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("modal-open");
 
     galleryCloseTimer = window.setTimeout(() => {
+      releaseGalleryFocus?.();
+      releaseGalleryFocus = null;
       mediaGalleryModal.hidden = true;
+      mediaGalleryModal.setAttribute("aria-hidden", "true");
       galleryImage.removeAttribute("src");
+      document.body.classList.remove("modal-open");
+      galleryCloseTimer = null;
 
       if (lastActiveGalleryElement) {
-        lastActiveGalleryElement.focus();
+        lastActiveGalleryElement.focus({ preventScroll: true });
       }
     }, 220);
   };
